@@ -10,11 +10,12 @@ export const ContactProvider = ({ children }) => {
 const loadContacts = async () => {
   try {
     const res = await api.getContacts();
-    setContacts(res.data || []);
+    setContacts(res.data.contacts || res.data || []);
   } catch {
     setError("Failed to fetch contacts");
   }
 };
+
 
 
   useEffect(() => {

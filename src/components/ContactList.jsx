@@ -6,7 +6,7 @@ const ContactList = () => {
   const { contacts } = useContext(ContactContext);
   const navigate = useNavigate();
 
-  if (!contacts.length) {
+  if (!Array.isArray(contacts) || contacts.length === 0) {
     return (
       <div className="alert alert-warning text-center mt-3">
         No contacts found.
