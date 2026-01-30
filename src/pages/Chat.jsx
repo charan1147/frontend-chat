@@ -1,109 +1,135 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { CallContext } from "../context/CallContext";
-import { ChatContext } from "../context/ChatContext";
 import api from "../services/api";
 import ChatBox from "../components/Chat/ChatBox";
 import useWebSocket from "../hooks/useWebSocket";
 
 const Chat = () => {
   const { contactId } = useParams();
-  const navigate = useNavigate();
-
   const { user } = useContext(AuthContext);
   const { callUser, error: callError } = useContext(CallContext);
-  const { messages, setMessages } = useContext(ChatContext);
 
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!contactId) return;
+    if (!contactId || !user?._id) return;
 
     const fetchMessages = async () => {
+      setLoading(true);
+      setError("");
+
       try {
         const res = await api.getMessages(contactId);
-        const msgs = Array.isArray(res.data.messages) ? res.data.messages : [];
-        setMessages(msgs);
-        setError("");
+        setMessages(res.data || []);
       } catch (err) {
-        setError(err?.response?.data?.message || "Failed to fetch messages");
-        setMessages([]); 
+        console.error("Failed to load messages:", err);
+        setError("Failed to load previous messages");
+        setMessages([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchMessages();
-  }, [contactId, setMessages]);
+  }, [contactId, user?._id]);
 
-  const handleReceive = (msg) => {
-    const isRelated =
+  const handleNewMessage = (msg) => {
+    if (
       (msg.sender === contactId && msg.receiver === user._id) ||
-      (msg.sender === user._id && msg.receiver === contactId);
-
-    if (isRelated) {
+      (msg.sender === user._id && msg.receiver === contactId)
+    ) {
       setMessages((prev) => [...prev, msg]);
     }
   };
 
-  useWebSocket(handleReceive);
+  useWebSocket(handleNewMessage);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    const messageText = input.trim();
+    setInput("");
+    const optimisticMsg = {
+      _id: `temp-${Date.now()}`,
+      sender: user._id,
+      content: messageText,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
-      const res = await api.sendMessage(contactId, input);
-      setMessages((prev) => [
-        ...prev,
-        {
-          _id: res.data._id || Date.now().toString(),
-          sender: { _id: user._id, name: user.name || user.email },
-          receiver: contactId,
-          content: input,
-          createdAt: new Date(),
-        },
-      ]);
-      setInput("");
-      setError("");
+      const res = await api.sendMessage(contactId, messageText);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === optimisticMsg._id
+            ? { ...res.data, sender: { _id: user._id } }
+            : m,
+        ),
+      );
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to send message");
+      console.error(err);
+      setError("Failed to send message");
+      setMessages((prev) => prev.filter((m) => m._id !== optimisticMsg._id));
     }
   };
 
-  const startCall = (isVideo) => {
-    callUser(contactId, isVideo);
-    navigate(`/call/${contactId}`);
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
-  if (!user || !contactId) {
-    return <p className="text-center mt-4">Loading...</p>;
+  if (!user) {
+    return <div className="text-center mt-5">Please log in to chat</div>;
   }
 
   return (
     <div className="container my-4">
+      {loading && <div className="text-center my-5">Loading messages...</div>}
+
       {(error || callError) && (
-        <div className="alert alert-danger">{error || callError}</div>
+        <div className="alert alert-danger mb-3">{error || callError}</div>
       )}
 
       <ChatBox messages={messages} currentUserId={user._id} />
 
-      <div className="d-flex mt-3">
-        <input
-          className="form-control me-2"
+      <div className="input-group mt-3">
+        <textarea
+          className="form-control"
           placeholder="Type a message..."
+          rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          style={{ resize: "none" }}
         />
-        <button className="btn btn-primary" onClick={sendMessage}>
+        <button
+          className="btn btn-primary"
+          onClick={sendMessage}
+          disabled={!input.trim() || loading}
+        >
           Send
         </button>
       </div>
 
       <div className="mt-3 d-flex gap-2">
-        <button className="btn btn-success" onClick={() => startCall(true)}>
+        <button
+          className="btn btn-success"
+          onClick={() => callUser(contactId, true)}
+        >
           Video Call
         </button>
-        <button className="btn btn-secondary" onClick={() => startCall(false)}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => callUser(contactId, false)}
+        >
           Audio Call
         </button>
       </div>
