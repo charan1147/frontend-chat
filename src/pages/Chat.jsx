@@ -1,41 +1,45 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext.jsx";
-import { CallContext } from "../context/CallContext.jsx";
-import { ChatContext } from "../context/ChatContext.jsx";
-import api from "../services/api.js";
-import ChatBox from "../components/Chat/ChatBox.jsx";
-import useWebSocket from "../hooks/useWebSocket.jsx";
+import { AuthContext } from "../context/AuthContext";
+import { CallContext } from "../context/CallContext";
+import { ChatContext } from "../context/ChatContext";
+import api from "../services/api";
+import ChatBox from "../components/Chat/ChatBox";
+import useWebSocket from "../hooks/useWebSocket";
 
-function Chat() {
+const Chat = () => {
   const { contactId } = useParams();
   const navigate = useNavigate();
+
   const { user } = useContext(AuthContext);
   const { callUser, error: callError } = useContext(CallContext);
   const { messages, setMessages } = useContext(ChatContext);
+
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchMessages() {
+    if (!contactId) return;
+
+    const fetchMessages = async () => {
       try {
         const res = await api.getMessages(contactId);
         setMessages(res.data.messages || []);
         setError("");
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch messages");
+        setError(err?.response?.data?.message || "Failed to fetch messages");
       }
-    }
-    if (contactId) {
-      fetchMessages();
-    }
+    };
+
+    fetchMessages();
   }, [contactId, setMessages]);
 
   const handleReceive = (msg) => {
-    if (
+    const isRelated =
       (msg.sender === contactId && msg.receiver === user._id) ||
-      (msg.sender === user._id && msg.receiver === contactId)
-    ) {
+      (msg.sender === user._id && msg.receiver === contactId);
+
+    if (isRelated) {
       setMessages((prev) => [...prev, msg]);
     }
   };
@@ -44,6 +48,7 @@ function Chat() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+
     try {
       const res = await api.sendMessage(contactId, input);
       setMessages((prev) => [
@@ -53,24 +58,24 @@ function Chat() {
           sender: { _id: user._id, name: user.name || user.email },
           receiver: contactId,
           content: input,
-          type: "text",
           createdAt: new Date(),
         },
       ]);
       setInput("");
       setError("");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to send message");
+      setError(err?.response?.data?.message || "Failed to send message");
     }
   };
 
-  const handleStartCall = (isVideo) => {
+  const startCall = (isVideo) => {
     callUser(contactId, isVideo);
     navigate(`/call/${contactId}`);
   };
 
-  if (!user || !contactId)
+  if (!user || !contactId) {
     return <p className="text-center mt-4">Loading...</p>;
+  }
 
   return (
     <div className="container my-4">
@@ -82,7 +87,6 @@ function Chat() {
 
       <div className="d-flex mt-3">
         <input
-          type="text"
           className="form-control me-2"
           placeholder="Type a message..."
           value={input}
@@ -94,21 +98,15 @@ function Chat() {
       </div>
 
       <div className="mt-3 d-flex gap-2">
-        <button
-          className="btn btn-success"
-          onClick={() => handleStartCall(true)}
-        >
+        <button className="btn btn-success" onClick={() => startCall(true)}>
           Video Call
         </button>
-        <button
-          className="btn btn-secondary"
-          onClick={() => handleStartCall(false)}
-        >
+        <button className="btn btn-secondary" onClick={() => startCall(false)}>
           Audio Call
         </button>
       </div>
     </div>
   );
-}
+};
 
-export default Chat
+export default Chat;

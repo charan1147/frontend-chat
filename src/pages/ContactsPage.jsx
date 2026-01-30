@@ -2,7 +2,7 @@ import React from "react";
 import Contacts from "./Contacts";
 import AddContact from "../components/AddContact";
 
-function ContactsPage() {
+const ContactsPage = () => {
   return (
     <div className="container mt-4">
       <div className="row">
@@ -15,6 +15,6 @@ function ContactsPage() {
       </div>
     </div>
   );
-}
+};
 
-export default  ContactsPage
+export default ContactsPage;

@@ -5,27 +5,30 @@ import { AuthContext } from "../../context/AuthContext";
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from || "/contacts";
+  const { state } = useLocation();
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const redirectTo = state?.from || "/contacts";
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.email.includes("@") || !formData.password) {
-      setError("Please enter a valid email and password.");
-      return;
-    }
+    setError("");
+
     try {
       await login(formData.email, formData.password);
-      navigate(from, { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err?.message || "Login failed");
     }
   };
 
@@ -33,19 +36,16 @@ const Login = () => {
     <div className="container d-flex justify-content-center align-items-center vh-100">
       <div
         className="card p-4 shadow-lg"
-        style={{ maxWidth: "400px", width: "100%" }}
+        style={{ maxWidth: 400, width: "100%" }}
       >
         <h2 className="text-center text-primary mb-4">Login</h2>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email address
-            </label>
+            <label className="form-label">Email address</label>
             <input
-              id="email"
-              name="email"
               type="email"
+              name="email"
               className="form-control"
               placeholder="Enter your email"
               value={formData.email}
@@ -55,13 +55,10 @@ const Login = () => {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
+            <label className="form-label">Password</label>
             <input
-              id="password"
-              name="password"
               type="password"
+              name="password"
               className="form-control"
               placeholder="Enter your password"
               value={formData.password}
@@ -70,19 +67,15 @@ const Login = () => {
             />
           </div>
 
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
+          {error && <div className="alert alert-danger">{error}</div>}
 
           <button type="submit" className="btn btn-primary w-100">
             Login
           </button>
 
           <p className="mt-3 text-center">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-decoration-none text-success">
+            Don&apos;t have an account?{" "}
+            <Link to="/register" className="text-success text-decoration-none">
               Register
             </Link>
           </p>

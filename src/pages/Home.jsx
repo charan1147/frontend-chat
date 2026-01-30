@@ -7,23 +7,44 @@ function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="container text-center mt-5">
-      <h1 className="text-primary mb-4">Chat App</h1>
-      {user && (
-        <>
-          <p className="lead">
-            Hello, <strong>{user.name || user.email}</strong>!
+    <div className="container mt-5">
+      <div className="card shadow text-center">
+        <div className="card-body">
+          <h1 className="text-primary mb-3">💬 Chat App</h1>
+
+          <p className="text-muted">
+            Simple, fast and secure messaging application
           </p>
-          <button
-            className="btn btn-success mt-3"
-            onClick={() => navigate("/contacts")}
-          >
-            Go to Contacts
-          </button>
-        </>
-      )}
+
+          {user ? (
+            <>
+              <h5 className="mt-4">
+                Welcome, <strong>{user.name || user.email}</strong>
+              </h5>
+
+              <div className="d-flex justify-content-center gap-3 mt-4">
+                <button
+                  className="btn btn-success"
+                  onClick={() => navigate("/contacts")}
+                >
+                  View Contacts
+                </button>
+
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => navigate("/chat")}
+                >
+                  Start Chat
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="mt-4 text-danger">Please login to start chatting</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-export default Home
+export default Home;

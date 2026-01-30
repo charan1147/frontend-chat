@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from "react";
 
-function ChatBox({ messages = [], currentUserId }) {
+const ChatBox = ({ messages = [], currentUserId }) => {
   const endRef = useRef(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const formatDateTime = (iso) => {
-    const date = new Date(iso);
+  const getDateTime = (timestamp) => {
+    const date = new Date(timestamp);
     return {
       date: date.toLocaleDateString(undefined, {
         year: "numeric",
@@ -23,9 +23,12 @@ function ChatBox({ messages = [], currentUserId }) {
   };
 
   const groupedMessages = messages.reduce((acc, msg) => {
-    const { date } = formatDateTime(msg.createdAt || msg.timestamp);
-    acc[date] = acc[date] || [];
+    const timestamp = msg.createdAt || msg.timestamp;
+    const { date } = getDateTime(timestamp);
+
+    if (!acc[date]) acc[date] = [];
     acc[date].push(msg);
+
     return acc;
   }, {});
 
@@ -37,13 +40,15 @@ function ChatBox({ messages = [], currentUserId }) {
       {Object.entries(groupedMessages).map(([date, msgs]) => (
         <div key={date}>
           <div className="text-center fw-bold my-2 text-primary">{date}</div>
+
           {msgs.map((msg) => {
-            const isCurrentUser =
-              (msg.sender?._id || msg.sender) === currentUserId;
+            const senderId = msg.sender?._id || msg.sender;
+            const isCurrentUser = senderId === currentUserId;
             const senderName = isCurrentUser
               ? "You"
               : msg.sender?.name || "Unknown User";
-            const { time } = formatDateTime(msg.createdAt || msg.timestamp);
+
+            const { time } = getDateTime(msg.createdAt || msg.timestamp);
 
             return (
               <div
@@ -69,9 +74,9 @@ function ChatBox({ messages = [], currentUserId }) {
           })}
         </div>
       ))}
-      <div ref={endRef}></div>
+      <div ref={endRef} />
     </div>
   );
-}
+};
 
-export default ChatBox
+export default ChatBox;

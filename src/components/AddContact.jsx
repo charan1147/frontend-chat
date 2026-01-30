@@ -1,17 +1,17 @@
 import React, { useState, useContext } from "react";
 import { ContactContext } from "../context/ContactContext";
 
- function AddContact() {
+const AddContact = () => {
   const [email, setEmail] = useState("");
   const { addContactToList, error } = useContext(ContactContext);
 
-  const addContact = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await addContactToList(email.trim());
-      setEmail("");
-    } catch {
-    }
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return;
+
+    await addContactToList(trimmedEmail);
+    setEmail("");
   };
 
   return (
@@ -20,11 +20,12 @@ import { ContactContext } from "../context/ContactContext";
         <div className="card-header bg-primary text-white">
           <h5 className="mb-0">Add New Contact</h5>
         </div>
+
         <div className="card-body">
-          <form onSubmit={addContact}>
+          <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <label htmlFor="contactEmail" className="form-label">
-                Contact Email:
+                Contact Email
               </label>
               <input
                 type="email"
@@ -41,16 +42,12 @@ import { ContactContext } from "../context/ContactContext";
               Add Contact
             </button>
 
-            {error && (
-              <div className="alert alert-danger mt-3" role="alert">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert alert-danger mt-3">{error}</div>}
           </form>
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default AddContact
+export default AddContact;

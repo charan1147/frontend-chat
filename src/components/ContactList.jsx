@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContactContext } from "../context/ContactContext";
 
-function ContactList() {
+const ContactList = () => {
   const { contacts } = useContext(ContactContext);
   const navigate = useNavigate();
 
@@ -14,21 +14,23 @@ function ContactList() {
     );
   }
 
+  const openChat = (id) => navigate(`/chat/${id}`);
+
   return (
     <ul className="list-group mt-3">
-      {contacts.map((contact) => (
+      {contacts.map(({ _id, name, email }) => (
         <li
-          key={contact._id}
+          key={_id}
           className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-          onClick={() => navigate(`/chat/${contact._id}`)}
+          onClick={() => openChat(_id)}
           role="button"
         >
-          <span>{contact.name || contact.email}</span>
-          <i className="bi bi-chat-dots-fill text-primary"></i>
+          <span>{name || email}</span>
+          <i className="bi bi-chat-dots-fill text-primary" />
         </li>
       ))}
     </ul>
   );
-}
+};
 
-export default ContactList
+export default ContactList;

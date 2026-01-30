@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useEffect, useState } from "react";
 import api from "../services/api";
 
 export const ContactContext = createContext();
@@ -6,36 +6,27 @@ export const ContactContext = createContext();
 export const ContactProvider = ({ children }) => {
   const [contacts, setContacts] = useState([]);
   const [error, setError] = useState(null);
-  useEffect(() => {
-    async function fetchContacts() {
-      try {
-        const res = await api.getContacts();
-        setContacts(res.data.contacts || []);
-        setError(null);
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch contacts");
-        setContacts([]);
-      }
-    }
-    fetchContacts();
-  }, []);
 
-  const addContactToList = async (email) => {
+  const loadContacts = async () => {
     try {
-      await api.addContact(email);
       const res = await api.getContacts();
-      setContacts(res.data.contacts || []);
-      setError(null);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to add contact");
-      throw err;
+      setContacts(res.data.contacts);
+    } catch {
+      setError("Failed to fetch contacts");
     }
   };
 
+  useEffect(() => {
+    loadContacts();
+  }, []);
+
+  const addContactToList = async (email) => {
+    await api.addContact(email);
+    loadContacts();
+  };
+
   return (
-    <ContactContext.Provider
-      value={{ contacts, setContacts, addContactToList, error }}
-    >
+    <ContactContext.Provider value={{ contacts, addContactToList, error }}>
       {children}
     </ContactContext.Provider>
   );

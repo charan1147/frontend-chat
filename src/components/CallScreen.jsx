@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { CallContext } from "../context/CallContext.jsx";
-import { AuthContext } from "../context/AuthContext.jsx";
-import { ContactContext } from "../context/ContactContext.jsx";
+import { CallContext } from "../context/CallContext";
+import { AuthContext } from "../context/AuthContext";
+import { ContactContext } from "../context/ContactContext";
 
- function CallScreen() {
+const CallScreen = () => {
   const { contactId } = useParams();
   const navigate = useNavigate();
+
   const { user } = useContext(AuthContext);
   const { contacts } = useContext(ContactContext);
   const {
@@ -19,13 +20,13 @@ import { ContactContext } from "../context/ContactContext.jsx";
     error,
   } = useContext(CallContext);
 
-  const localRef = useRef();
-  const remoteRef = useRef();
+  const localRef = useRef(null);
+  const remoteRef = useRef(null);
+
+  const isVideoCall = call.callType !== "audio";
 
   const contact = contacts.find((c) => c._id === contactId);
-  const contactName = contact
-    ? contact.name || contact.email
-    : "Unknown Contact";
+  const contactName = contact?.name || contact?.email || "Unknown Contact";
 
   useEffect(() => {
     if (call.isReceivingCall && !callAccepted) {
@@ -33,36 +34,33 @@ import { ContactContext } from "../context/ContactContext.jsx";
     }
   }, [call.isReceivingCall, callAccepted, answerCall]);
 
-  useEffect(() => {
-    if (localRef.current && localStream && call.callType !== "audio") {
-      localRef.current.srcObject = localStream;
-      localRef.current
-        .play()
-        .catch((err) => console.error("Local video play error:", err));
-    }
-  }, [localStream, call.callType]);
+  const attachStream = (ref, stream) => {
+    if (!ref.current || !stream) return;
+    ref.current.srcObject = stream;
+    ref.current.play().catch(() => {});
+  };
 
   useEffect(() => {
-    if (remoteRef.current && remoteStream && call.callType !== "audio") {
-      remoteRef.current.srcObject = remoteStream;
-      remoteRef.current
-        .play()
-        .catch((err) => console.error("Remote video play error:", err));
-    }
-  }, [remoteStream, call.callType]);
+    if (isVideoCall) attachStream(localRef, localStream);
+  }, [localStream, isVideoCall]);
+
+  useEffect(() => {
+    if (isVideoCall) attachStream(remoteRef, remoteStream);
+  }, [remoteStream, isVideoCall]);
 
   const handleEndCall = () => {
     endCall();
     navigate(`/chat/${contactId}`);
   };
 
-  if (!user || !contactId)
+  if (!user || !contactId) {
     return <div className="text-center mt-5">Loading...</div>;
+  }
 
   return (
     <div
       className={`d-flex justify-content-center align-items-center vh-100 ${
-        call.callType === "audio" ? "" : "bg-dark position-relative"
+        isVideoCall ? "bg-dark position-relative" : ""
       }`}
     >
       {error && (
@@ -71,7 +69,7 @@ import { ContactContext } from "../context/ContactContext.jsx";
         </div>
       )}
 
-      {call.callType === "audio" ? (
+      {!isVideoCall ? (
         <div
           className="card text-center shadow-sm p-3"
           style={{ width: "250px" }}
@@ -91,6 +89,7 @@ import { ContactContext } from "../context/ContactContext.jsx";
             playsInline
             className="w-100 h-100 object-fit-cover"
           />
+
           {localStream && (
             <video
               ref={localRef}
@@ -101,6 +100,7 @@ import { ContactContext } from "../context/ContactContext.jsx";
               style={{ width: "200px", bottom: "10px", right: "10px" }}
             />
           )}
+
           <button
             className="btn btn-danger position-absolute top-0 end-0 m-3"
             onClick={handleEndCall}
@@ -111,6 +111,6 @@ import { ContactContext } from "../context/ContactContext.jsx";
       )}
     </div>
   );
-}
+};
 
-export default CallScreen
+export default CallScreen;

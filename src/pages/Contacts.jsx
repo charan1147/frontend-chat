@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContactContext } from "../context/ContactContext";
 
-function Contacts() {
+const Contacts = () => {
   const { contacts } = useContext(ContactContext);
   const navigate = useNavigate();
 
@@ -11,19 +11,20 @@ function Contacts() {
       <div className="card-header bg-primary text-white">
         <h4 className="mb-0">Contacts</h4>
       </div>
+
       <div className="card-body">
         {contacts.length === 0 ? (
           <p className="text-danger">No contacts found.</p>
         ) : (
           <ul className="list-group list-group-flush">
-            {contacts.map((c) => (
+            {contacts.map(({ _id, name, email }) => (
               <li
-                key={c._id}
+                key={_id}
                 className="list-group-item list-group-item-action"
-                onClick={() => navigate(`/chat/${c._id}`)}
-                style={{ cursor: "pointer" }}
+                role="button"
+                onClick={() => navigate(`/chat/${_id}`)}
               >
-                {c.name || c.email}
+                {name || email}
               </li>
             ))}
           </ul>
@@ -31,6 +32,6 @@ function Contacts() {
       </div>
     </div>
   );
-}
+};
 
-export default  Contacts
+export default Contacts;
