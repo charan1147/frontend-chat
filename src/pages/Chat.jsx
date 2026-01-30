@@ -24,10 +24,12 @@ const Chat = () => {
     const fetchMessages = async () => {
       try {
         const res = await api.getMessages(contactId);
-        setMessages(res.data.messages || []);
+        const msgs = Array.isArray(res.data.messages) ? res.data.messages : [];
+        setMessages(msgs);
         setError("");
       } catch (err) {
         setError(err?.response?.data?.message || "Failed to fetch messages");
+        setMessages([]); 
       }
     };
 

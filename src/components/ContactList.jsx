@@ -6,13 +6,15 @@ const ContactList = () => {
   const { contacts } = useContext(ContactContext);
   const navigate = useNavigate();
 
-  if (!Array.isArray(contacts) || contacts.length === 0) {
-    return (
-      <div className="alert alert-warning text-center mt-3">
-        No contacts found.
-      </div>
-    );
-  }
+if (!Array.isArray(contacts) || contacts.length === 0) {
+  return <div>No contacts found.</div>;
+}
+
+{
+  Array.isArray(contacts) &&
+    contacts.map((contact) => <li key={contact._id}>{contact.name}</li>);
+}
+
 
   const openChat = (id) => navigate(`/chat/${id}`);
 
