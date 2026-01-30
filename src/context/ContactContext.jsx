@@ -7,14 +7,15 @@ export const ContactProvider = ({ children }) => {
   const [contacts, setContacts] = useState([]);
   const [error, setError] = useState(null);
 
-  const loadContacts = async () => {
-    try {
-      const res = await api.getContacts();
-      setContacts(res.data.contacts);
-    } catch {
-      setError("Failed to fetch contacts");
-    }
-  };
+const loadContacts = async () => {
+  try {
+    const res = await api.getContacts();
+    setContacts(res.data || []);
+  } catch {
+    setError("Failed to fetch contacts");
+  }
+};
+
 
   useEffect(() => {
     loadContacts();
