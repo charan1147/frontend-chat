@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { CallContext } from "../context/CallContext";
 import api from "../services/api";
 import ChatBox from "../components/Chat/ChatBox";
 import useWebSocket from "../hooks/useWebSocket";
@@ -9,38 +8,34 @@ import useWebSocket from "../hooks/useWebSocket";
 const Chat = () => {
   const { contactId } = useParams();
   const { user } = useContext(AuthContext);
-  const { callUser, error: callError } = useContext(CallContext);
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!contactId || !user?._id) return;
 
-    const fetchMessages = async () => {
+    const loadMessages = async () => {
       setLoading(true);
-      setError("");
-
       try {
-        const res = await api.getMessages(contactId);
-        setMessages(res.data || []);
-      } catch (err) {
-        console.error("Failed to load messages:", err);
-        setError("Failed to load previous messages");
+        const { data } = await api.getMessages(contactId);
+        setMessages(Array.isArray(data) ? data : []);
+      } catch {
+        setError("Failed to load messages");
         setMessages([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMessages();
+    loadMessages();
   }, [contactId, user?._id]);
 
   const handleNewMessage = (msg) => {
     if (
-      (msg.sender === contactId && msg.receiver === user._id) ||
+      msg.sender === contactId ||
       (msg.sender === user._id && msg.receiver === contactId)
     ) {
       setMessages((prev) => [...prev, msg]);
@@ -50,36 +45,31 @@ const Chat = () => {
   useWebSocket(handleNewMessage);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    const text = input.trim();
+    if (!text) return;
 
-    const messageText = input.trim();
     setInput("");
-    const optimisticMsg = {
-      _id: `temp-${Date.now()}`,
+
+    const tempId = `temp-${Date.now()}`;
+    const optimistic = {
+      _id: tempId,
       sender: user._id,
-      content: messageText,
+      content: text,
       createdAt: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, optimisticMsg]);
+    setMessages((prev) => [...prev, optimistic]);
 
     try {
-      const res = await api.sendMessage(contactId, messageText);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m._id === optimisticMsg._id
-            ? { ...res.data, sender: { _id: user._id } }
-            : m,
-        ),
-      );
-    } catch (err) {
-      console.error(err);
-      setError("Failed to send message");
-      setMessages((prev) => prev.filter((m) => m._id !== optimisticMsg._id));
+      const { data } = await api.sendMessage(contactId, text);
+      setMessages((prev) => prev.map((m) => (m._id === tempId ? data : m)));
+    } catch {
+      setError("Failed to send");
+      setMessages((prev) => prev.filter((m) => m._id !== tempId));
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleEnter = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -87,16 +77,14 @@ const Chat = () => {
   };
 
   if (!user) {
-    return <div className="text-center mt-5">Please log in to chat</div>;
+    return <div className="text-center mt-5">Please log in</div>;
   }
 
   return (
     <div className="container my-4">
-      {loading && <div className="text-center my-5">Loading messages...</div>}
+      {loading && <div className="text-center my-5">Loading...</div>}
 
-      {(error || callError) && (
-        <div className="alert alert-danger mb-3">{error || callError}</div>
-      )}
+      {error && <div className="alert alert-danger mb-3">{error}</div>}
 
       <ChatBox messages={messages} currentUserId={user._id} />
 
@@ -107,7 +95,7 @@ const Chat = () => {
           rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleEnter}
           style={{ resize: "none" }}
         />
         <button
@@ -116,21 +104,6 @@ const Chat = () => {
           disabled={!input.trim() || loading}
         >
           Send
-        </button>
-      </div>
-
-      <div className="mt-3 d-flex gap-2">
-        <button
-          className="btn btn-success"
-          onClick={() => callUser(contactId, true)}
-        >
-          Video Call
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={() => callUser(contactId, false)}
-        >
-          Audio Call
         </button>
       </div>
     </div>

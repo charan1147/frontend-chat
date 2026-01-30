@@ -8,7 +8,6 @@ import {
 import { AuthProvider } from "./context/AuthContext";
 import { ChatProvider } from "./context/ChatContext";
 import { ContactProvider } from "./context/ContactContext";
-import { CallProvider } from "./context/CallContext";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
@@ -24,7 +23,6 @@ function App() {
     <AuthProvider>
       <ChatProvider>
         <ContactProvider>
-          <CallProvider>
             <Router>
               <Navbar />
 
@@ -72,19 +70,10 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-                <Route
-                  path="/call/:contactId"
-                  element={
-                    <PrivateRoute>
-                      <CallPage />
-                    </PrivateRoute>
-                  }
-                />
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Router>
-          </CallProvider>
         </ContactProvider>
       </ChatProvider>
     </AuthProvider>

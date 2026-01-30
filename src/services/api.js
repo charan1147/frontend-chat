@@ -38,13 +38,7 @@ export default {
     api.get(`/messages/${id}?page=${page}&limit=${limit}`),
 
   sendMessage: (receiverId, content) =>
-    api.post("/messages/send", { receiverId, content }),
-
-  startCall: (receiverId, callType) =>
-    api.post("/call/start", { receiverId, callType }),
-
-  answerCall: (roomId) => api.post("/call/answer", { roomId }),
-  endCall: (roomId) => api.post("/call/end", { roomId }),
+    api.post("/messages/send", { receiverId, content })
 };
 
 export const getRoomId = (a, b) => [String(a), String(b)].sort().join("_");
